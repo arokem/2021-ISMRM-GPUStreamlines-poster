@@ -48,11 +48,11 @@
 % The widths of these boxes can be easily edited to accommodate your content as you see fit
 
 \begin{minipage}[b]{0.85\linewidth}
-\veryHuge \color{NavyBlue} \textbf{Diffusion Kurtosis Imaging for the Human Connectome Project} \color{Black}\\ % Title
+\veryHuge \color{NavyBlue} \textbf{Evaluating the accuracy of diffusion MRI models in the Human Connectome Project at scale with DIPY and Cloudknot} \color{Black}\\ % Title
 %\Huge\textit{An Exploration of Complexity}\\[1cm] % Subtitle
-\huge \textbf{Ariel Rokem\textsuperscript{1}, Libby Huber\textsuperscript{2}, Parmita Mehta\textsuperscript{3}, Rafael Neto Henriques\textsuperscript{4}, Magda Balazinska\textsuperscript{3} \& Jason Yeatman\textsuperscript{2}}\\ % Author(s)
-\Large 1. The eScience Institute, 2. ILABS, 3. Computer Science and Engineering, Univ. of Washington \& 4. MRC Cognition and Brain Sci., Univ. of Cambridge\\ % University/organization
-\Large Contact: \texttt{arokem@uw.edu} $|$ Download: \texttt{http://arokem.org/presentations/sfn2016.html}
+\huge \textbf{Ariel Rokem\textsuperscript{1}, \& Adam Richie-Halford \textsuperscript{2}}\\ % Author(s)
+\Large 1. The eScience Institute, 2. Dept. of Physics, Univ. of Washington \\ % University/organization
+\Large Contact: \texttt{arokem@uw.edu} $|$ Download: \texttt{http://arokem.org/presentations/brainpi-dipy-2019}
 \end{minipage}
 %
 %\begin{minipage}[b]{0.25\linewidth}
@@ -66,7 +66,6 @@
 %
 \begin{minipage}[b]{0.19\linewidth}
 \includegraphics[width=10cm]{UWlogo.png}
-\includegraphics[width=8cm]{Camlogo.png}
 \end{minipage}
 
 \vspace{0.5cm} % A bit of extra whitespace between the header and poster content
@@ -83,11 +82,10 @@
 \subsection*{The Human Connectome Project}
 
 Diffusion MRI (dMRI) measurements provide detailed information about human brain
-connectivity and microstructure \emph{in vivo}. HCP is measuring high-quality
-multi-modal MRI data from 1,200 individuals and making these data publcly
-available \cite{VanEssen2012}. It has already made measurements from
-approximately 900 subjects available through Amazon's Simple Storage Service
-(S3).
+connectivity and microstructure \emph{in vivo}. HCP has measured high-quality
+multi-modal MRI data from 1,200 individuals and is making these data publcly
+available \cite{glasser2016}. Data can be accessed through Amazon's Simple
+Storage Web Service (S3).
 
 \subsection*{What model should we use to explain the data?}
 
@@ -181,12 +179,39 @@ diffusivity in different directions.
 \color{Navy}
 %----------------------------------------------------------------------------%	RESULTS
 %----------------------------------------------------------------------------
+
+\section*{Cloud computing}
+
+Cloud computing provides access to data and compute resources in a manner that is:
+
+\begin{itemize}
+\item{{\bf Scalable}. Massive compute resources can be deployed.}
+\item{{\bf Elastic}. Resources can be provisioned and de-provisioned rapidly.}
+\item{{\bf Robust}. Can handle large datasets and workloads.}
+\item{{\bf Up to date}. The underlying compute technologies are updated by the cloud provider.}
+\end{itemize}
+
+But it is also:
+
+\begin{itemize}
+\item{{\bf Challenging to learn.} Researchers using the cloud need to learn new terminology.}
+\item{{\bf Hard to automate.} Complex APIs vs. clicking through web consoles.}
+\item{{\bf Provisioning resources has overhead.} Especially in the absence of automation.}
+\item{{\bf Not (yet?) a perfect match to scientific use-cases.} The major business case is developers building web-based platforms.}
+\end{itemize}
+
+\subsection*{Cloudknot}
+
+A Python library that automates submission of scientific computing functions
+to the Amazon Web Services Batch service.
+
+\texttt{https://richford.github.io/cloudknot/}
+
 \section*{Results}
 
 \noindent \textbf{We compared DKI and DTI using \emph{K-fold cross-validation}}
 
 \noindent \textbf{We estimated model fit \emph{accuracy} and model parameter \emph{reliability}}
-
 
 \subsection*{Model accuracy}
 \normalsize
