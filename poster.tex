@@ -35,6 +35,33 @@
 \usepackage{amsfonts, amsmath, amsthm, amssymb} % For math fonts, symbols and environments
 \usepackage{wrapfig} % Allows wrapping text around tables and figures
 
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{
+  %frame=tb,
+  language=Python,
+  aboveskip=2mm,
+  belowskip=0mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3,
+  framexleftmargin=15pt
+  }
+
+
 \begin{document}
 
 %----------------------------------------------------------------------------------------
@@ -87,7 +114,25 @@ multi-modal MRI data from 1,200 individuals and is making these data publcly
 available \cite{glasser2016}. Data can be accessed through Amazon's Simple
 Storage Web Service (S3).
 
+\subsection*{DIPY: Software framework for analysis of dMRI \cite{Garyfallidis2014FrontNeuroinf}}
+
+\begin{minipage}[b]{1\linewidth}
+\begin{minipage}[b]{0.35\linewidth}
+    \begin{itemize}
+    \item Open-source
+    \item Community-developed
+    \item Supported by NIBIB through the CRCNS program
+    \end{itemize}
+\end{minipage}
+\begin{minipage}[b]{0.65\linewidth}
+    \includegraphics[height=3.5cm]{dipy-logo.png}
+\end{minipage}
+\end{minipage}
+
 \subsection*{What model should we use to explain the data?}
+
+open-source software library (\texttt{http://dipy.org/}) . 5-fold cross-validation was implemented using DIPY's cross-validation module \cite{Rokem2015PLoS}
+
 
 \subsection*{Diffusion Tensor Imaging (DTI): 6 parameters}
 
@@ -175,8 +220,17 @@ diffusivity in different directions.
 
 \vfill
 \columnbreak
-
 \color{Navy}
+
+\section*{Comparing models}
+
+Cross-validation provides a flexible approach to comparing different models \cite{Rokem2015PLoS}
+
+{\bf Problem: } Cross-validation is compute intense, so would take prohibitively long time if executed serially.
+
+{\bf Solution: } Parallelize across subjects on AWS cloud computing.
+
+
 %----------------------------------------------------------------------------%	RESULTS
 %----------------------------------------------------------------------------
 
@@ -191,7 +245,7 @@ Cloud computing provides access to data and compute resources in a manner that i
 \item{{\bf Up to date}. The underlying compute technologies are updated by the cloud provider.}
 \end{itemize}
 
-But it is also:
+\subsection*{But it is also:}
 
 \begin{itemize}
 \item{{\bf Challenging to learn.} Researchers using the cloud need to learn new terminology.}
@@ -203,15 +257,41 @@ But it is also:
 \subsection*{Cloudknot}
 
 A Python library that automates submission of scientific computing functions
-to the Amazon Web Services Batch service.
+to the Amazon Web Services Batch service \cite{adam_richie-halford-proc-scipy-2018}.
 
 \texttt{https://richford.github.io/cloudknot/}
+
+\begin{minipage}[b]{1\linewidth}
+\begin{minipage}[b]{0.45\linewidth}
+  \includegraphics[height=3.5cm]{AWS.png}\\
+  \includegraphics[width=14cm]{ck-architecture.png}
+\end{minipage}
+\begin{minipage}[b]{0.55\linewidth}
+\begin{lstlisting}
+import cloudknot as ck
+
+def xval_hcp(subject):
+	from dipy.reconst import dti
+    import dipy.reconst.cross_validation as xval
+	data = load_data(subject) # Loads data from S3
+	model = dti.TensorModel(data['gradients'])
+    pred = xval.kfold_xval(model, data, 5)
+    cod = xval.coeff_of_determination(pred, data)
+    upload_data(cod) # Save back into S3
+
+# Creates the Docker image:
+knot = ck.Knot(func=xval_hcp)
+# Dispatches execution to AWS:
+knot.map(['SUB1', ..., 'SUB100'])
+\end{lstlisting}
+\end{minipage}
+\end{minipage}
+
+\columnbreak
 
 \section*{Results}
 
 \noindent \textbf{We compared DKI and DTI using \emph{K-fold cross-validation}}
-
-\noindent \textbf{We estimated model fit \emph{accuracy} and model parameter \emph{reliability}}
 
 \subsection*{Model accuracy}
 \normalsize
@@ -219,7 +299,7 @@ to the Amazon Web Services Batch service.
 \noindent Cross-validated $R^2$: \textbf{A} Comparison of the full distribution
 in a single subject, and comparison of the median (dashed line) in all subjects
 for DKI (all b-values) and DTI (\textbf{B} all b-values, \textbf{C} only b=1,000
-$s/mm^2$  \hfill \break
+$s/mm^2$)  \hfill \break
 
 \begin{minipage}[b]{1\linewidth}
   \large
@@ -237,95 +317,9 @@ $s/mm^2$  \hfill \break
   \end{minipage}
 \end{minipage}
 
-\subsection*{Parameter reliability}
-
-\noindent Parameter reliability is estimated by comparing diffusion-based
-statistics based on a difference in FA/MD between b=1000 and b=1000,2000 (DTI)
-or between b=1000,2000, b=1000,3000 (DKI).
-
-\noindent BIAS is the median difference between sub-samples VARIABILITY is the
-range of the differences (the range of the central 95\% of the distribution).
-
-\subsubsection*{Mean diffusivity}
-
-\begin{minipage}[b]{1\linewidth}
-  \begin{minipage}[b]{0.33\linewidth}
-  \center Single subject distributions\\
-  \includegraphics[width=11.5cm]{reliability_singleton_md.png}
-  \end{minipage}
-  \begin{minipage}[b]{0.33\linewidth}
-    \center Bias\\
-    \includegraphics[width=11.5cm]{md_bias.png}
-  \end{minipage}
-  \begin{minipage}[b]{0.33\linewidth}
-    \center Variability\\
-  \includegraphics[width=11.5cm]{md_spread.png}
-  \end{minipage}
-\end{minipage}
-
-\subsubsection*{Fractional anisotropy}
-
-\begin{minipage}[b]{1\linewidth}
-  \begin{minipage}[b]{0.33\linewidth}
-  \center Single subject distributions\\
-  \includegraphics[width=11.5cm]{reliability_singleton_fa.png}
-  \end{minipage}
-  \begin{minipage}[b]{0.33\linewidth}
-    \center Bias\\
-    \includegraphics[width=11.5cm]{fa_bias.png}
-  \end{minipage}
-  \begin{minipage}[b]{0.33\linewidth}
-    \center Variability\\
-  \includegraphics[width=11.5cm]{fa_spread.png}
-  \end{minipage}
-\end{minipage}
-
 %----------------------------------------------------------------------------
 %	MATERIALS AND METHODS
 %----------------------------------------------------------------------------
-\normalsize
-\section*{Materials and Methods}
-\vspace{-10mm}
-\subsection*{Data}
-Measurements were obtained from the WU-Minn Human Connectome Project consortium
-(\texttt{https://www.humanconnectome.org/}) through AWS S3.
-
-\noindent Of the 900 subjects that are available, 788 subjects have full
-diffusion measurements: 270 diffusion weighted directions in 3 different
-b-values (90 directions each): 1,000, 2,000 and 3,000 $s/mm^2$, collected at
-1.25 x 1.25 x 1.25 $mm^3$ resolution.
-
-\noindent \emph{Freesurfer} segmentation from a T1-weighted measurement was also
-used. We focused our analysis only on the parts of the volume that contained the
-white matter. \vspace{-10mm}
-
-
-\color{DarkSlateGray}
-\subsection*{Analysis}
-
-We used an Amazon Web Services compute cluster with 36 nodes. AWS
-\emph{r3.2xlarge} instances were used, optimized for memory-intensive
-applications: each instance has 8 vCPU, 61 GiB Memory and 160 GB SSD storage.
-
-\noindent We used DTI and DKI implementations that are part of the DIPY
-open-source software library (\texttt{http://dipy.org/}) \cite{Garyfallidis2014FrontNeuroinf}. 5-fold cross-validation was implemented using DIPY's cross-validation module \cite{Rokem2015PLoS}
-
-\noindent Computation was distributed using Apache Spark, an open-source
-parallel processing framework that coordinates computation across distributed
-clusters (\texttt{http://spark.apache.org/}). Because model-fitting requires
-large amounts of memory, each compute node ran one Spark worker.
-
-\hspace{2 mm}
-\includegraphics[height=3.5cm]{AWS.png}
-\hspace{2 mm}
-\includegraphics[height=3.5cm]{dipy-logo.png}
-\hspace{2 mm}
-\includegraphics[height=3.5cm]{spark-logo.png}
-\hspace{2 mm}
-
-\noindent Analysis software: \texttt{http://github.com/arokem/dki-accuracy-reliability}
-
-%------------------------------------------------
 
 \color{SaddleBrown} % SaddleBrown color for the conclusions to make them stand out
 
@@ -335,11 +329,10 @@ large amounts of memory, each compute node ran one Spark worker.
 
 \item DKI more accurately fits the HCP data than DTI
 
-\item DKI statistics are more reliable than DTI statistics
-
 \item DKI has the additional benefit that it provides additional parameters that
 lend themselves to a richer biophysical interpretation of the signal.
 
+\item Open-source software for analysis of human white matter scales on cloud computing.
 \end{itemize}
 
 \color{DarkSlateGray} % Set the color back to DarkSlateGray for the rest of the content
@@ -353,17 +346,13 @@ lend themselves to a richer biophysical interpretation of the signal.
 
 %----------------------------------------------------------------------------%	ACKNOWLEDGEMENTS
 %----------------------------------------------------------------------------
-\subsection*{Acknowledgements} \footnotesize This research was supported through
-a grant from the Gordon \& Betty Moore Foundation and the Alfred P. Sloan
-Foundation to the University of Washington eScience Institute, through NSF grant
-IIS-1247469, and through gifts from Amazon and the Intel Science and Technology
-Center for Big Data. We are also grateful for research cloud credits from Amazon
-Web Services, and for a Google Summer of Code 2015 fellowship to RNH.
+\subsection*{Acknowledgements} \footnotesize
 
-\includegraphics[height=2.6cm]{eSciencelogo.png}
+
+\includegraphics[height=2.6cm]{NIBIB.png}\\
 \includegraphics[height=2.6cm]{SloanLogo.png}
 \includegraphics[height=2.6cm]{MooreFdn.png}
-\includegraphics[height=2.6cm]{NSFLogo}
+\includegraphics[height=2.6cm]{eSciencelogo.png}
 %----------------------------------------------------------------------------
 
 \end{multicols}
