@@ -1,5 +1,5 @@
 REPORT=poster
-LATEX=pdflatex
+LATEX=xelatex
 BIBTEX=bibtex
 
 SRCS=$(wildcard *.tex)

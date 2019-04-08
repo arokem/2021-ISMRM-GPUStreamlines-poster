@@ -27,7 +27,10 @@
 \usepackage[svgnames]{xcolor} % Specify colors by their 'svgnames', for a full list of all colors available see here: http://www.latextemplates.com/svgnames-colors
 
 %\usepackage{times} % Use the times font
-\usepackage{palatino} % Uncomment to use the Palatino font
+% \usepackage{palatino} % Uncomment to use the Palatino font
+\usepackage{fontspec}
+\setmainfont{Latin Modern Sans}
+
 \usepackage{graphicx} % Required for including images
 \graphicspath{{figures/}} % Location of the graphics files
 \usepackage{booktabs} % Top and bottom rules for table
@@ -303,17 +306,19 @@ $s/mm^2$)  \hfill \break
 
 \begin{minipage}[b]{1\linewidth}
   \large
-  \begin{minipage}[b]{0.33\linewidth}
+  \begin{minipage}[b]{0.25\linewidth}
   \textbf{A}\\
   \includegraphics[width=11.5cm]{histogram_cod_dki_dti.png}
   \end{minipage}
-  \begin{minipage}[b]{0.33\linewidth}
+\hfill
+  \begin{minipage}[b]{0.25\linewidth}
   \textbf{B}\\
-  \includegraphics[width=11.5cm]{cod_dti_dki.png}
+  \includegraphics[width=12cm]{cod_dti_dki.png}
   \end{minipage}
-  \begin{minipage}[b]{0.33\linewidth}
+\hfill
+  \begin{minipage}[b]{0.25\linewidth}
   \textbf{C}\\
-  \includegraphics[width=11.5cm]{dti_1000_dki.png}
+  \includegraphics[width=12cm]{dti_1000_dki.png}
   \end{minipage}
 \end{minipage}
 
