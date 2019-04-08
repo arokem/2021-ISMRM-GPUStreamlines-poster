@@ -274,18 +274,18 @@ to the Amazon Web Services Batch service \cite{adam_richie-halford-proc-scipy-20
 import cloudknot as ck
 
 def xval_hcp(subject):
-	from dipy.reconst import dti
+	 from dipy.reconst import dti
     import dipy.reconst.cross_validation as xval
-	data = load_data(subject) # Loads data from S3
-	model = dti.TensorModel(data['gradients'])
+	 data = load_data(subject) # Loads data from S3
+	 model = dti.TensorModel(data['gradients'])
     pred = xval.kfold_xval(model, data, 5)
     cod = xval.coeff_of_determination(pred, data)
-    upload_data(cod) # Save back into S3
+    upload_data(cod, subject) # Save back into S3
 
 # Creates the Docker image:
 knot = ck.Knot(func=xval_hcp)
 # Dispatches execution to AWS:
-knot.map(['SUB1', ..., 'SUB100'])
+knot.map(['SUB1', ..., 'SUB1200'])
 \end{lstlisting}
 \end{minipage}
 \end{minipage}
