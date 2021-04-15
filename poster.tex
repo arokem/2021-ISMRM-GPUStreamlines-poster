@@ -77,12 +77,11 @@
 % The third is 19% wide and houses a logo for your university/organization or a photo of you
 % The widths of these boxes can be easily edited to accommodate your content as you see fit
 
-\begin{minipage}[b]{0.85\linewidth}
-\veryHuge \color{NavyBlue} \textbf{Evaluating the accuracy of diffusion MRI models in the Human Connectome Project at scale with DIPY and Cloudknot} \color{Black}\\ % Title
-%\Huge\textit{An Exploration of Complexity}\\[1cm] % Subtitle
-\huge \textbf{Ariel Rokem\textsuperscript{1}, \& Adam Richie-Halford \textsuperscript{2}}\\ % Author(s)
-\Large 1. The eScience Institute, 2. Dept. of Physics, Univ. of Washington \\ % University/organization
-\Large Contact: \texttt{arokem@uw.edu} $|$ Download: \texttt{http://arokem.org/presentations/brainpi-dipy-2019}
+\begin{minipage}[b]{0.60\linewidth}
+\Huge \color{NavyBlue} \textbf{GPU-accelerated diffusion MRI tractography in DIPY} \color{Black} \\ % Poster title
+{\LARGE Mauro Bisson\textsuperscript{1}, Josh Romero\textsuperscript{1}, Thorsten Kurth\textsuperscript{1}, Massimiliano Fatica\textsuperscript{1}, Pablo F. Damasceno\textsuperscript{2}, Xihe Xie\textsuperscript{2},\\ Adam Richie-Halford\textsuperscript{3}, Serge Koudoro\textsuperscript{4}, Eleftherios Garyfallidis\textsuperscript{4}, \&  Ariel Rokem \textsuperscript{3}}\\ % Author(s)
+\Large 1. NVIDIA, 2. University of California, San Francisco, 3. University of Washington, 4. Indiana University  \\ % University/organization
+\Large Contact: \texttt{arokem@uw.edu}
 \end{minipage}
 %
 %\begin{minipage}[b]{0.25\linewidth}
@@ -94,8 +93,14 @@
 %Email: \texttt{john@LaTeXTemplates.com}\\ % Email address
 %\end{minipage}
 %
-\begin{minipage}[b]{0.19\linewidth}
-\includegraphics[width=10cm]{UWlogo.png}
+\begin{minipage}[b]{0.4\linewidth}
+
+\includegraphics[height=5cm]{UWlogo.png}
+\includegraphics[height=5cm]{iulogo.jpeg}
+\includegraphics[height=4cm]{Nvidia_logo.png}
+\includegraphics[height=5cm]{UCSFlogo.png}
+
+
 \end{minipage}
 
 \vspace{0.5cm} % A bit of extra whitespace between the header and poster content
@@ -109,222 +114,81 @@
 
 \section*{Introduction}
 
-\subsection*{The Human Connectome Project}
+The white matter of the brain contains the axons of long-range connections between distant brain regions. The integration and coordination of brain activity through these connections are important for information processing and for brain health. Diffusion-weighted MRI (dMRI) and computational tractography provide non-invasive in vivo estimates of the trajectories of these brain connections.
 
-Diffusion MRI (dMRI) measurements provide detailed information about human brain
-connectivity and microstructure \emph{in vivo}. HCP has measured high-quality
-multi-modal MRI data from 1,200 individuals and is making these data publcly
-available \cite{glasser2016}. Data can be accessed through Amazon's Simple
-Storage Web Service (S3).
+This is done by estimating the directions of diffusion in every voxel of measurement, and by propagating streamlines through the volume based on the peaks in the distribution of diffusion directions. The resulting tractograms are important in research that uses dMRI to measure individual differences in brain connections. They are also important in clinical use-cases, where invasive procedures are guided by these estimates, aiming to avoid disconnections of crucial brain pathways. However, a major barrier to progress in the use of these methods is that tractography can be a computationally-intensive processing step.
+
+\vspace{0.5em}
+\noindent\textbf{\underline{Challenge}: Even when highly-efficient CPU-based implementations are provided in open-source software, these can take hours to process millions of streamlines in an individual brain.}
+\vspace{0.5em}
+
+\noindent\textbf{\underline{Solution}: By taking advantage of the massively parallel architecture of graphical processing units (GPU) and the implementations of very fast basic computational operations, GPU-based computing can be used to accelerate many scientific use-cases.}
+\vspace{0.5em}
 
 \subsection*{DIPY: Software framework for analysis of dMRI \cite{Garyfallidis2014FrontNeuroinf}}
 
 \begin{minipage}[b]{1\linewidth}
-\begin{minipage}[b]{0.35\linewidth}
+\begin{minipage}[b]{0.5\linewidth}
     \begin{itemize}
     \item Open-source
     \item Community-developed
-    \item Supported by NIBIB through the CRCNS program
+    \item Contains implementations of methods for
+    \begin{itemize}
+        \item Diffusion reconstruction
+        \item Tractography
+        \item Bundle recognition and streamline clustering
+        \item Image registration and segmentation
+    \end{itemize}
     \end{itemize}
 \end{minipage}
 \begin{minipage}[b]{0.65\linewidth}
-    \includegraphics[height=3.5cm]{dipy-logo.png}
+    \includegraphics[height=5cm]{dipy-logo.png} \\
+    \begin{centering}
+    \LARGE \texttt{https://dipy.org}
+    \end{centering}
 \end{minipage}
 \end{minipage}
 
-\subsection*{What model should we use to explain the data?}
+\subsection*{GPU tractography}
 
-open-source software library (\texttt{http://dipy.org/}) . 5-fold cross-validation was implemented using DIPY's cross-validation module \cite{Rokem2015PLoS}
+\noindent Relying on the DIPY implementation of residual bootstrap tractography \cite{berman2008probabilistic}, we implemented a multi-GPU parallelizable version constructed on NVIDIA’s CUDA application programming interface (API).  The API of the GPU version is compatible with the one implemented in DIPY, enabling direct comparisons and interoperability.
+
+\section*{Methods}
 
 
-\subsection*{Diffusion Tensor Imaging (DTI): 6 parameters}
-
-Approximates diffusion in every voxel as a Gaussian distribution
-\cite{Basser1994-hg}:
-
-\vspace{2mm}
-\begin{center}
-\begin{large}
-
-$S(\theta, b) = S_0 e^{\theta^T \mathbf{Q} \theta} $
-
-\end{large}
-\end{center}
-
-\noindent $b$ is the \textbf {b-value},
-
-\noindent $S_0$ is the signal in the absence of diffusion gradient sensitization ($b=0$)
-
-\noindent $\mathbf{Q}$ is a positive-definite quadratic form:
-
-\vspace{2mm}
-\begin{center}
-
-$\mathbf{D} = \begin{pmatrix} \sigma_{xx} & \sigma_{xy} & \sigma_{xz} \\
-                              \sigma_{yx} & \sigma_{yy} & \sigma_{yz} \\
-				                      \sigma_{zx} & \sigma_{zy} & \sigma_{zz} \\
-\end{pmatrix} $
-
-\end{center}
-
-\subsection*{Diffusion Kurtosis imaging (DKI): 21 parameters}
-
-DKI is an extension of DTI that accounts for non-Gaussian behavior in complex tissue, with many barriers to the diffusion process (cell membranes,
-myelin sheaths, etc.) \cite{Jensen2005-vr}:
-
-\vspace{2mm}
-\begin{center}
-\begin{large}
-
-$ S(\theta, b)=S_{0}e^{-bD(\theta)+\frac{1}{6}b^{2}D(\theta)^{2}K(\theta)}$
-
-\vspace{2mm}
-\end{large}
-\end{center}
-
-\vspace{2mm}
-\begin{center}
-\begin{large}
-
-$D(\theta)=\sum_{i=1}^{3}\sum_{j=1}^{3}\theta_{i}\theta_{j}Q_{ij}$
-
-\vspace{2mm}
-\end{large}
-\end{center}
-
-\vspace{2mm}
-\begin{center}
-\begin{large}
-
-$K(\theta)=\frac{MD^{2}}{D(\theta)^{2}}\sum_{i=1}^{3}\sum_{j=1}^{3}\sum_{k=1}^{3} \sum_{l=1}^{3}\theta_{i}\theta_{j}\theta_{k}\theta_{l}W_{ijkl}$
-
-\vspace{2mm}
-\end{large}
-\end{center}
-
-$\mathbf{W}$ is a rank 4 tensor (3-by-3-by-3-by-3 matrix).
-
-\vspace{-2mm}
-\subsection*{Diffusion Statistics}
-
+\subsection*{Data}
 \begin{itemize}
+\item HARDI acquisition with 2x2x2 $mm^3$ isotropic voxels, 150 b=1,000~$\frac{s}{mm^2}$ volumes and 10 b0 volumes \cite{rokem2015evaluating}.
 
-\item Mean diffusivity (\textbf{MD}) characterizes the mean displacement of
-water molecules within a voxel.
-
-\item Fractional anisotropy (\textbf{FA}) characterizes the variance in
-diffusivity in different directions.
-
+\item Super-Resolution Hybrid Diffusion Imaging  (HYDI), with an effective resolution of 0.625x0.625x0.625 $mm^3$ isotropic voxels, b=500, 800, 1600, 2600~$\frac{s}{mm^2}$, in 134 diffusion directions, and 8 b0 volumes \cite{elsaidsuper}.
 \end{itemize}
 
-\large
+\subsection*{Experiments}
 
-\noindent \textbf{Brain measurements that provide a close tie between brain tissue properties and behavior}.
+\noindent Experiments to profile the performance of the algorithm were conducted using an AWS p3.16xlarge instance with 8 NVIDIA Tesla V100 Graphical Processing Units and 488 GB RAM. For comparison, CPU code was run on an AWS x1e.4xlarge with 488 GB RAM. In both cases, 27 tracking seeds were placed in each voxel in the white matter to initialize tracking.
 
 \vfill
 \columnbreak
 \color{Navy}
 
-\section*{Comparing models}
-
-Cross-validation provides a flexible approach to comparing different models \cite{Rokem2015PLoS}
-
-{\bf Problem: } Cross-validation is compute intense, so would take prohibitively long time if executed serially.
-
-{\bf Solution: } Parallelize across subjects on AWS cloud computing.
-
-
 %----------------------------------------------------------------------------%	RESULTS
 %----------------------------------------------------------------------------
 
-\section*{Cloud computing}
 
-Cloud computing provides access to data and compute resources in a manner that is:
+\section*{Performance benchmark}
 
-\begin{itemize}
-\item{{\bf Scalable}. Massive compute resources can be deployed.}
-\item{{\bf Elastic}. Resources can be provisioned and de-provisioned rapidly.}
-\item{{\bf Robust}. Can handle large datasets and workloads.}
-\item{{\bf Up to date}. The underlying compute technologies are updated by the cloud provider.}
-\end{itemize}
+\includegraphics[width=0.8\linewidth]{benchmark.png}
 
-\subsection*{But it is also:}
+For the same task (HARDI data, 27 seeds per WM voxel) tractography duration decreases with the number of GPUs available. Speedup relative to CPU ranges from approximately 200-fold, with one GPU to almost 700-fold with 8 GPUs.
 
-\begin{itemize}
-\item{{\bf Challenging to learn.} Researchers using the cloud need to learn new terminology.}
-\item{{\bf Hard to automate.} Complex APIs vs. clicking through web consoles.}
-\item{{\bf Provisioning resources has overhead.} Especially in the absence of automation.}
-\item{{\bf Not (yet?) a perfect match to scientific use-cases.} The major business case is developers building web-based platforms.}
-\end{itemize}
+\section*{HYDI tractography}
 
-\subsection*{Cloudknot}
+\includegraphics[width=0.8\linewidth]{hydi-tractography.png}
 
-A Python library that automates submission of scientific computing functions
-to the Amazon Web Services Batch service \cite{adam_richie-halford-proc-scipy-2018}.
+GPU-accelerated tractography of high-resolution data, acquired at 0.625 $mm^3$  effective resolution. This is a small subset sampled randomly for visualization purposes: approximately 8M streamlines of the 150M streamlines tracked.
 
-\texttt{https://richford.github.io/cloudknot/}
-
-\begin{minipage}[b]{1\linewidth}
-\begin{minipage}[b]{0.45\linewidth}
-  \includegraphics[height=3.5cm]{AWS.png}\\
-  \includegraphics[width=14cm]{ck-architecture.png}
-\end{minipage}
-\begin{minipage}[b]{0.55\linewidth}
-\begin{lstlisting}
-import cloudknot as ck
-
-def xval_hcp(subject):
-	 from dipy.reconst import dti
-    import dipy.reconst.cross_validation as xval
-	 data = load_data(subject) # Loads data from S3
-	 model = dti.TensorModel(data['gradients'])
-    pred = xval.kfold_xval(model, data, 5)
-    cod = xval.coeff_of_determination(pred, data)
-    upload_data(cod, subject) # Save back into S3
-
-# Creates the Docker image:
-knot = ck.Knot(func=xval_hcp)
-# Dispatches execution to AWS:
-knot.map(['SUB1', ..., 'SUB1200'])
-\end{lstlisting}
-\end{minipage}
-\end{minipage}
 
 \columnbreak
-
-\section*{Results}
-
-\noindent \textbf{We compared DKI and DTI using \emph{K-fold cross-validation}}
-
-\subsection*{Model accuracy}
-\normalsize
-
-\noindent Cross-validated $R^2$: \textbf{A} Comparison of the full distribution
-in a single subject, and comparison of the median (dashed line) in all subjects
-for DKI (all b-values) and DTI (\textbf{B} all b-values, \textbf{C} only b=1,000
-$s/mm^2$)  \hfill \break
-
-\begin{minipage}[b]{1\linewidth}
-  \large
-  \begin{minipage}[b]{0.25\linewidth}
-  \textbf{A}\\
-  \includegraphics[width=11.5cm]{histogram_cod_dki_dti.png}
-  \end{minipage}
-\hfill
-  \begin{minipage}[b]{0.25\linewidth}
-  \textbf{B}\\
-  \includegraphics[width=12cm]{cod_dti_dki.png}
-  \end{minipage}
-\hfill
-  \begin{minipage}[b]{0.25\linewidth}
-  \textbf{C}\\
-  \includegraphics[width=12cm]{dti_1000_dki.png}
-  \end{minipage}
-\end{minipage}
-
-%----------------------------------------------------------------------------
-%	MATERIALS AND METHODS
-%----------------------------------------------------------------------------
 
 \color{SaddleBrown} % SaddleBrown color for the conclusions to make them stand out
 
@@ -332,12 +196,20 @@ $s/mm^2$)  \hfill \break
 \large
 \begin{itemize}
 
-\item DKI more accurately fits the HCP data than DTI
+\item GPU-accelerated tractography algorithms that leverage the methods implemented in the DIPY open-source software project accelerate tractography by at least 200-fold, enabling applications to clinical data, as well as very large datasets.
 
-\item DKI has the additional benefit that it provides additional parameters that
-lend themselves to a richer biophysical interpretation of the signal.
+\item Open source software is available at: \\ \texttt{https://github.com/dipy/GPUStreamlines}
 
-\item Open-source software for analysis of human white matter scales on cloud computing.
+\item Docker image available at: \\ \texttt{docker pull ghcr.io/dipy/gpustreamlines:latest}
+
+\small
+
+docker run --gpus=all -v ${PWD}:/opt/exec/output:rw -it ghcr.io/dipy/gpustreamlines:latest \
+ python run_dipy_gpu_hardi.py --chunk-size 100000 --ngpus 1 --output-prefix output/hardi_gpu_full --use-fast-write
+
+ docker run --gpus=all -v ${PWD}:/opt/exec/output:rw -it ghcr.io/dipy/gpustreamlines:latest \
+ ./merge_trk.sh -o output/hardi_tracks.trk output/hardi_gpu_full*
+
 \end{itemize}
 
 \color{DarkSlateGray} % Set the color back to DarkSlateGray for the rest of the content
@@ -354,7 +226,8 @@ lend themselves to a richer biophysical interpretation of the signal.
 \subsection*{Acknowledgements} \footnotesize
 
 
-\includegraphics[height=2.6cm]{NIBIB.png}\\
+\includegraphics[height=2.6cm]{NIBIB.png}
+\includegraphics[height=2.6cm]{nimh-logo.png} \\
 \includegraphics[height=2.6cm]{SloanLogo.png}
 \includegraphics[height=2.6cm]{MooreFdn.png}
 \includegraphics[height=2.6cm]{eSciencelogo.png}
