@@ -47,7 +47,7 @@
 
 \lstset{
   %frame=tb,
-  language=Python,
+  language=bash,
   aboveskip=2mm,
   belowskip=0mm,
   showstringspaces=false,
@@ -79,7 +79,7 @@
 
 \begin{minipage}[b]{0.60\linewidth}
 \Huge \color{NavyBlue} \textbf{GPU-accelerated diffusion MRI tractography in DIPY} \color{Black} \\ % Poster title
-{\LARGE Mauro Bisson\textsuperscript{1}, Josh Romero\textsuperscript{1}, Thorsten Kurth\textsuperscript{1}, Massimiliano Fatica\textsuperscript{1}, Pablo F. Damasceno\textsuperscript{2}, Xihe Xie\textsuperscript{2},\\ Adam Richie-Halford\textsuperscript{3}, Serge Koudoro\textsuperscript{4}, Eleftherios Garyfallidis\textsuperscript{4}, \&  Ariel Rokem \textsuperscript{3}}\\ % Author(s)
+{\LARGE Mauro Bisson\textsuperscript{1}, Josh Romero\textsuperscript{1}, Thorsten Kurth\textsuperscript{1}, Massimiliano Fatica\textsuperscript{1}, Pablo F. Damasceno\textsuperscript{2}, \\ Xihe Xie\textsuperscript{2}, Adam Richie-Halford\textsuperscript{3}, Serge Koudoro\textsuperscript{4}, Eleftherios Garyfallidis\textsuperscript{4}, \&  Ariel Rokem \textsuperscript{3}}\\ % Author(s)
 \Large 1. NVIDIA, 2. University of California, San Francisco, 3. University of Washington, 4. Indiana University  \\ % University/organization
 \Large Contact: \texttt{arokem@uw.edu}
 \end{minipage}
@@ -97,9 +97,8 @@
 
 \includegraphics[height=5cm]{UWlogo.png}
 \includegraphics[height=5cm]{iulogo.jpeg}
-\includegraphics[height=4cm]{Nvidia_logo.png}
 \includegraphics[height=5cm]{UCSFlogo.png}
-
+\includegraphics[height=5cm]{Nvidia_logo.png}
 
 \end{minipage}
 
@@ -114,9 +113,16 @@
 
 \section*{Introduction}
 
-The white matter of the brain contains the axons of long-range connections between distant brain regions. The integration and coordination of brain activity through these connections are important for information processing and for brain health. Diffusion-weighted MRI (dMRI) and computational tractography provide non-invasive in vivo estimates of the trajectories of these brain connections.
+The white matter of the brain contains the axons of long-range connections between distant brain regions. Diffusion-weighted MRI (dMRI) and computational tractography provide non-invasive \emph{in vivo} estimates of the trajectories of these brain connections.
 
-This is done by estimating the directions of diffusion in every voxel of measurement, and by propagating streamlines through the volume based on the peaks in the distribution of diffusion directions. The resulting tractograms are important in research that uses dMRI to measure individual differences in brain connections. They are also important in clinical use-cases, where invasive procedures are guided by these estimates, aiming to avoid disconnections of crucial brain pathways. However, a major barrier to progress in the use of these methods is that tractography can be a computationally-intensive processing step.
+This is done by estimating the directions of diffusion in every voxel of measurement, and by propagating streamlines through the volume based on the peaks in the distribution of diffusion directions.
+
+Tractography is used for:
+
+\begin{itemize}
+    \item Research that uses dMRI to measure individual differences in brain connections.
+    \item Clinical use-cases: invasive procedures are guided by these estimates, aiming to avoid disconnections of crucial brain pathways.
+\end{itemize}
 
 \vspace{0.5em}
 \noindent\textbf{\underline{Challenge}: Even when highly-efficient CPU-based implementations are provided in open-source software, these can take hours to process millions of streamlines in an individual brain.}
@@ -153,22 +159,40 @@ This is done by estimating the directions of diffusion in every voxel of measure
 
 \noindent Relying on the DIPY implementation of residual bootstrap tractography \cite{berman2008probabilistic}, we implemented a multi-GPU parallelizable version constructed on NVIDIA’s CUDA application programming interface (API).  The API of the GPU version is compatible with the one implemented in DIPY, enabling direct comparisons and interoperability.
 
+\noindent \textbf{Implementation details}:
+\begin{itemize}
+    \item Multi-GPU code (Python/C++/CUDA) to generate streamlines from seeds obtained from input ROI
+    \item Two level of parallelism:
+    \begin{itemize}
+        \item Seeds are partitioned among the available GPUs
+        \item Inside each GPU, each seed is processed by a group of threads
+    \end{itemize}
+    \item Seeds are processed in chunks: $\frac{TOT\_SEEDS}{CHUNK\_SIZE * N\_GPUS}$ iterations
+    \item In each chunk
+    \begin{itemize}
+        \item GPUs are used to generate the streamlines
+        \item The CPU is used to dump them into TRK files
+    \end{itemize}
+\end{itemize}
+
 \section*{Methods}
 
 
 \subsection*{Data}
 \begin{itemize}
-\item HARDI acquisition with 2x2x2 $mm^3$ isotropic voxels, 150 b=1,000~$\frac{s}{mm^2}$ volumes and 10 b0 volumes \cite{rokem2015evaluating}.
 
-\item Super-Resolution Hybrid Diffusion Imaging  (HYDI), with an effective resolution of 0.625x0.625x0.625 $mm^3$ isotropic voxels, b=500, 800, 1600, 2600~$\frac{s}{mm^2}$, in 134 diffusion directions, and 8 b0 volumes \cite{elsaidsuper}.
+\item HARDI acquisition with $2x2x2~mm^3$ isotropic voxels, $150~b=1,000~\frac{s}{mm^2}$ volumes and 10 b0 volumes \cite{rokem2015evaluating}.
+
+\item Super-Resolution Hybrid Diffusion Imaging  (HYDI), with an effective resolution of $0.625x0.625x0.625~mm^3$ isotropic voxels, $b=500, 800, 1600, 2600~\frac{s}{mm^2}$, in 134 diffusion directions, and 8 b0 volumes \cite{elsaidsuper}.
 \end{itemize}
+
+\vfill
+\columnbreak
 
 \subsection*{Experiments}
 
 \noindent Experiments to profile the performance of the algorithm were conducted using an AWS p3.16xlarge instance with 8 NVIDIA Tesla V100 Graphical Processing Units and 488 GB RAM. For comparison, CPU code was run on an AWS x1e.4xlarge with 488 GB RAM. In both cases, 27 tracking seeds were placed in each voxel in the white matter to initialize tracking.
 
-\vfill
-\columnbreak
 \color{Navy}
 
 %----------------------------------------------------------------------------%	RESULTS
@@ -177,18 +201,26 @@ This is done by estimating the directions of diffusion in every voxel of measure
 
 \section*{Performance benchmark}
 
-\includegraphics[width=0.8\linewidth]{benchmark.png}
+\includegraphics[width=0.65\linewidth]{benchmark.png}
 
-For the same task (HARDI data, 27 seeds per WM voxel) tractography duration decreases with the number of GPUs available. Speedup relative to CPU ranges from approximately 200-fold, with one GPU to almost 700-fold with 8 GPUs.
+\noindent For the same task (HARDI data, 27 seeds per WM voxel) tractography duration decreases with the number of GPUs available. Speedup relative to CPU ranges from approximately 200-fold, with one GPU to almost 700-fold with 8 GPUs.
 
 \section*{HYDI tractography}
 
-\includegraphics[width=0.8\linewidth]{hydi-tractography.png}
+\includegraphics[width=0.65\linewidth]{hydi-tractography.png}
 
-GPU-accelerated tractography of high-resolution data, acquired at 0.625 $mm^3$  effective resolution. This is a small subset sampled randomly for visualization purposes: approximately 8M streamlines of the 150M streamlines tracked.
+\noindent GPU-accelerated tractography of high-resolution data, acquired at 0.625 $mm^3$  effective resolution. This is a small subset sampled randomly for visualization purposes: approximately 8M streamlines of the 150M streamlines tracked.
 
 
 \columnbreak
+
+\section*{Validation in clinical data}
+
+\includegraphics[width=0.8\linewidth]{validation.pdf}
+
+\noindent GPU-accelerated tractography (orange) compared to clinically-validated tractography (yellow), using DIPY version 0.16. Both results were cleaned by an expert.
+
+
 
 \color{SaddleBrown} % SaddleBrown color for the conclusions to make them stand out
 
@@ -204,15 +236,20 @@ GPU-accelerated tractography of high-resolution data, acquired at 0.625 $mm^3$  
 
 \small
 
-docker run --gpus=all -v ${PWD}:/opt/exec/output:rw -it ghcr.io/dipy/gpustreamlines:latest \
- python run_dipy_gpu_hardi.py --chunk-size 100000 --ngpus 1 --output-prefix output/hardi_gpu_full --use-fast-write
+\color{blue}
+\begin{lstlisting}
 
- docker run --gpus=all -v ${PWD}:/opt/exec/output:rw -it ghcr.io/dipy/gpustreamlines:latest \
- ./merge_trk.sh -o output/hardi_tracks.trk output/hardi_gpu_full*
+docker run --gpus=all -v ${PWD}:/opt/exec/output:rw -it ghcr.io/dipy/gpustreamlines:latest \
+python run_dipy_gpu_hardi.py --chunk-size 100000 --ngpus 1 --output-prefix output/hardi_gpu_full --use-fast-write
+
+docker run --gpus=all -v ${PWD}:/opt/exec/output:rw -it ghcr.io/dipy/gpustreamlines:latest \
+./merge_trk.sh -o output/hardi_tracks.trk output/hardi_gpu_full*
+\end{lstlisting}
 
 \end{itemize}
 
 \color{DarkSlateGray} % Set the color back to DarkSlateGray for the rest of the content
+
 
 %---------------------------------------------------------------------------	REFERENCES
 %----------------------------------------------------------------------------
